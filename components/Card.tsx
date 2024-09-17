@@ -11,13 +11,14 @@ import { useBoard } from "@/data/BoardProvider";
 export const Card = ({ card }: { card: CardType }) => {
   const { id, title } = card;
   const ref = useRef(null);
-
-  const { moveCard } = useBoard();
-
   const [isDragging, setDragging] = useState(false);
+
+  const [aboutToDrop, setAboutToDrop] = useState(false);
+
 
   useEffect(() => {
     const element = ref.current;
+    if (!element) return;
 
     const dragConfig = {
       element,
@@ -37,18 +38,24 @@ export const Card = ({ card }: { card: CardType }) => {
       getData() {
         return card;
       },
-      onDrop({ source, self }) {
+      canDrop({ source }) {
+        return source.element !== element;
+      },
+      onDragEnter() {
+        setAboutToDrop(true);
+      },
+      onDragLeave() {
+        setAboutToDrop(false);
+      },
+      onDrop() {
+        setAboutToDrop(false);
         const target = self;
-        moveCard(
-          source.data.id,
-          target.data.columnId,
-          target.data.position + 1
-        );
+        
       },
     };
 
     return combine(draggable(dragConfig), dropTargetForElements(dropConfig));
-  }, [card, moveCard]);
+  }, [card]);
 
   return (
     <li
