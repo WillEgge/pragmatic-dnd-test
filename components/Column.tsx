@@ -3,11 +3,13 @@ import { EmptyCardHolder } from "./EmptyCardHolder";
 import { CardList } from "./CardList";
 import { useEffect, useRef, useState } from "react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { useBoard } from "@/data/BoardProvider";
 
 export const Column = ({ column }: { column: ColumnType }) => {
   const { id, name, cards } = column;
   const ref = useRef<HTMLLIElement | null>(null);
   const [highlight, setHighlight] = useState(false);
+  const { moveCard } = useBoard();
 
   useEffect(() => {
     const element = ref.current;
@@ -34,6 +36,44 @@ export const Column = ({ column }: { column: ColumnType }) => {
 
     return monitorForElements(monitorConfig);
   }, [id]);
+
+  useEffect(() => {
+    monitorForElements({
+      onDrop({ source, location }) {
+        const target = location.current.dropTargets[0];
+
+        if (!source || !target) {
+          return;
+        }
+
+        const sourceData = source.data;
+        const targetData = target.data;
+
+        if (!sourceData || !targetData) {
+          return;
+        }
+
+        if (targetData.id === "placeholder") {
+          moveCard(sourceData.id, targetData.columnId, 0);
+        } else {
+          const indexOfTarget: number = cards.findIndex(
+            (card) => card.id === targetData.id
+          );
+
+          let targetPosition: number = -1;
+          if (indexOfTarget === 0) {
+            targetPosition = 0;
+          } else if (indexOfTarget === cards.length - 1) {
+            targetPosition = -1;
+          } else {
+            targetPosition = targetData.position;
+          }
+          
+          moveCard(sourceData.id, targetData.columnId, targetPosition);
+        }
+      },
+    });
+  }, [moveCard]);
 
   return (
     <li
