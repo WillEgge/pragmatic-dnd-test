@@ -23,7 +23,7 @@ export const Column = ({ column }: { column: ColumnType }) => {
           return;
         }
 
-        if (target.data.columnId === id) {
+        if (target.data.column_id === id) {
           setHighlight(true);
         } else {
           setHighlight(false);
@@ -54,7 +54,7 @@ export const Column = ({ column }: { column: ColumnType }) => {
         }
 
         if (targetData.id === "placeholder") {
-          moveCard(sourceData.id, targetData.columnId, 0);
+          moveCard(sourceData.id, targetData.column_id, 0);
         } else {
           const indexOfTarget: number = cards.findIndex(
             (card) => card.id === targetData.id
@@ -69,7 +69,7 @@ export const Column = ({ column }: { column: ColumnType }) => {
             targetPosition = targetData.position;
           }
           
-          moveCard(sourceData.id, targetData.columnId, targetPosition);
+          moveCard(sourceData.id, targetData.column_id, targetPosition);
         }
       },
     });
@@ -86,7 +86,7 @@ export const Column = ({ column }: { column: ColumnType }) => {
       {cards.length > 0 ? (
         <CardList cards={cards} />
       ) : (
-        <EmptyCardHolder columnId={id} />
+        <EmptyCardHolder column_id={id} />
       )}
     </li>
   );
