@@ -2,7 +2,7 @@ export type CardType = {
   id: string;
   title: string;
   position: number;
-  columnId: string;
+  column_id: string;
 };
 
 export type ColumnType = {
