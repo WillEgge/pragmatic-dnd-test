@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 
-const EmptyCardHolder = ({ columnId }: { columnId: string }) => {
+const EmptyCardHolder = ({ column_id }: { column_id: string }) => {
   const [aboutToDrop, setAboutToDrop] = useState(false);
   const ref = useRef<HTMLLIElement | null>(null);
 
@@ -17,7 +17,7 @@ const EmptyCardHolder = ({ columnId }: { columnId: string }) => {
         return {
           id: "placeholder",
           position: 0,
-          columnId: columnId,
+          column_id: column_id,
         }
       },
       onDragEnter() {
@@ -33,7 +33,7 @@ const EmptyCardHolder = ({ columnId }: { columnId: string }) => {
   }, []);
 
   return (
-    <ol className="p-5 flex flex-col gap-4" data-test-id={columnId}>
+    <ol className="p-5 flex flex-col gap-4" data-test-id={column_id}>
       <li
         ref={ref}
         className={`relative p-2 h-8 | ${aboutToDrop ? "bg-green-200" : ""}`}
