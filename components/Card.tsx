@@ -6,14 +6,14 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 
-import { useBoard } from "@/data/BoardProvider";
+// import { useBoard } from "@/data/BoardProvider";
 
 export const Card = ({ card }: { card: CardType }) => {
   const { id, title } = card;
   const ref = useRef(null);
   const [isDragging, setDragging] = useState(false);
 
-  const [aboutToDrop, setAboutToDrop] = useState(false);
+  // const [aboutToDrop, setAboutToDrop] = useState(false);
 
 
   useEffect(() => {
@@ -40,21 +40,22 @@ export const Card = ({ card }: { card: CardType }) => {
       },
       canDrop({ source }) {
         return source.element !== element;
-      },
-      onDragEnter() {
-        setAboutToDrop(true);
-      },
-      onDragLeave() {
-        setAboutToDrop(false);
-      },
-      onDrop() {
-        setAboutToDrop(false);
-        const target = self;
+      }//,
+      // onDragEnter() {
+      //   setAboutToDrop(true);
+      // },
+      // onDragLeave() {
+      //   setAboutToDrop(false);
+      // },
+      // onDrop() {
+        // setAboutToDrop(false);
+        // const target = self;
         
-      },
+      // },
     };
 
     return combine(draggable(dragConfig), dropTargetForElements(dropConfig));
+    // return draggable(dragConfig);
   }, [card]);
 
   return (
