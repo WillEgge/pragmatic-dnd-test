@@ -8,34 +8,34 @@ import { useBoard } from "@/data/BoardProvider";
 export const Column = ({ column }: { column: ColumnType }) => {
   const { id, name, cards } = column;
   const ref = useRef<HTMLLIElement | null>(null);
-  const [highlight, setHighlight] = useState(false);
+  // const [highlight, setHighlight] = useState(false);
   const { moveCard } = useBoard();
 
-  useEffect(() => {
-    const element = ref.current;
+  // useEffect(() => {
+  //   const element = ref.current;
 
-    const monitorConfig = {
-      element,
-      onDrag({ location }) {
-        const target = location.current.dropTargets[0];
+  //   const monitorConfig = {
+  //     element,
+  //     onDrag({ location }) {
+  //       const target = location.current.dropTargets[0];
 
-        if (!target) {
-          return;
-        }
+  //       if (!target) {
+  //         return;
+  //       }
 
-        if (target.data.column_id === id) {
-          setHighlight(true);
-        } else {
-          setHighlight(false);
-        }
-      },
-      onDrop() {
-        setHighlight(false);
-      },
-    };
+  //       if (target.data.column_id === id) {
+  //         setHighlight(true);
+  //       } else {
+  //         setHighlight(false);
+  //       }
+  //     },
+  //     onDrop() {
+  //       setHighlight(false);
+  //     },
+  //   };
 
-    return monitorForElements(monitorConfig);
-  }, [id]);
+  //   return monitorForElements(monitorConfig);
+  // }, [id]);
 
   useEffect(() => {
     monitorForElements({
@@ -68,7 +68,7 @@ export const Column = ({ column }: { column: ColumnType }) => {
           } else {
             targetPosition = targetData.position;
           }
-          
+
           moveCard(sourceData.id, targetData.column_id, targetPosition);
         }
       },
@@ -76,12 +76,14 @@ export const Column = ({ column }: { column: ColumnType }) => {
   }, [moveCard]);
 
   return (
-    <li
-      className={`w-72 h-full shrink-0 ${
-        highlight ? "bg-blue-100" : "bg-gray-50"
-      } rounded-md`}
-      ref={ref}
-    >
+    // <li
+    //   className={`w-72 h-full shrink-0 ${
+    //     highlight ? "bg-blue-100" : "bg-gray-50"
+    //   } rounded-md`}
+    //   ref={ref}
+    // >
+
+    <li className={`w-72 h-full shrink-0 bg-gray-50 rounded-md`} ref={ref}>
       <h2 className="p-4 text-slate-700">{name}</h2>
       {cards.length > 0 ? (
         <CardList cards={cards} />
