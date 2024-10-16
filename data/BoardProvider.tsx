@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 const BoardContext = createContext<BoardContextType>({
   board: { name: "", columns: [] },
   moveCard: noop,
+  addCard: async () => null
 });
 
 const BoardProvider = ({ children }: { children: ReactNode }) => {
@@ -57,7 +58,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
       let sourceCardIndex: number = -1;
 
       for (const column of updatedBoard.columns) {
-        sourceCardIndex = column.cards.findIndex((c) => c.id === cardId);
+        sourceCardIndex = column.cards.findIndex((c: CardType) => c.id === cardId);
         if (sourceCardIndex !== -1) {
           sourceColumn = column;
           card = column.cards[sourceCardIndex];
@@ -71,7 +72,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const targetColumn = updatedBoard.columns.find(
-        (col) => col.id === targetColumnId
+        (col: ColumnType) => col.id === targetColumnId
       );
 
       if (!targetColumn) {
@@ -99,7 +100,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const updatePositions = (column: ColumnType) => {
-        column.cards.forEach((c, index) => {
+        column.cards.forEach((c: CardType, index: number) => {
           c.position = index;
         });
       };
@@ -126,11 +127,41 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         fetchBoard();
       }
     },
+    [setBoard]
+  );
+
+  const addCard = useCallback(
+    async (newCard: Omit<CardType, "id">) => {
+      const { data, error } = await supabase
+        .from("cards")
+        .insert(newCard)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error adding new card:", error);
+        throw error;
+      }
+
+      if (data) {
+        const updatedBoard = { ...board };
+        const targetColumn = updatedBoard.columns.find(
+          (col) => col.id === newCard.column_id
+        );
+        if (targetColumn) {
+          targetColumn.cards.push(data);
+          targetColumn.cards.sort((a, b) => a.position - b.position);
+          setBoard(updatedBoard);
+        }
+      }
+
+      return data;
+    },
     [board]
   );
 
   return (
-    <BoardContext.Provider value={{ board, moveCard }}>
+    <BoardContext.Provider value={{ board, moveCard, addCard }}>
       {children}
     </BoardContext.Provider>
   );
