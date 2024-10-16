@@ -1,41 +1,14 @@
-import { ColumnType } from "@/types/type";
+import { ColumnType, CardType } from "@/types/type";
 import { EmptyCardHolder } from "./EmptyCardHolder";
 import { CardList } from "./CardList";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { useBoard } from "@/data/BoardProvider";
 
 export const Column = ({ column }: { column: ColumnType }) => {
   const { id, name, cards } = column;
-  const ref = useRef<HTMLLIElement | null>(null);
-  // const [highlight, setHighlight] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
   const { moveCard } = useBoard();
-
-  // useEffect(() => {
-  //   const element = ref.current;
-
-  //   const monitorConfig = {
-  //     element,
-  //     onDrag({ location }) {
-  //       const target = location.current.dropTargets[0];
-
-  //       if (!target) {
-  //         return;
-  //       }
-
-  //       if (target.data.column_id === id) {
-  //         setHighlight(true);
-  //       } else {
-  //         setHighlight(false);
-  //       }
-  //     },
-  //     onDrop() {
-  //       setHighlight(false);
-  //     },
-  //   };
-
-  //   return monitorForElements(monitorConfig);
-  // }, [id]);
 
   useEffect(() => {
     monitorForElements({
@@ -46,8 +19,8 @@ export const Column = ({ column }: { column: ColumnType }) => {
           return;
         }
 
-        const sourceData = source.data;
-        const targetData = target.data;
+        const sourceData = source.data as CardType;
+        const targetData = target.data as CardType & { column_id: string };
 
         if (!sourceData || !targetData) {
           return;
@@ -73,23 +46,18 @@ export const Column = ({ column }: { column: ColumnType }) => {
         }
       },
     });
-  }, [moveCard]);
+  }, [moveCard, cards]);
 
   return (
-    // <li
-    //   className={`w-72 h-full shrink-0 ${
-    //     highlight ? "bg-blue-100" : "bg-gray-50"
-    //   } rounded-md`}
-    //   ref={ref}
-    // >
-
-    <li className={`w-72 h-full shrink-0 bg-gray-50 rounded-md`} ref={ref}>
-      <h2 className="p-4 text-slate-700">{name}</h2>
-      {cards.length > 0 ? (
-        <CardList cards={cards} />
-      ) : (
-        <EmptyCardHolder column_id={id} />
-      )}
-    </li>
+    <div className="bg-gray-100 rounded-lg p-4 shadow-md" ref={ref}>
+      <h2 className="text-lg font-semibold mb-4 text-gray-700">{name}</h2>
+      <div>
+        {cards.length > 0 ? (
+          <CardList cards={cards} />
+        ) : (
+          <EmptyCardHolder column_id={id} />
+        )}
+      </div>
+    </div>
   );
 };
