@@ -23,4 +23,5 @@ export type BoardContextType = {
     targetColumnId: string,
     targetPosition: number
   ) => void;
+  addCard: (newCard: Omit<CardType, "id">) => Promise<CardType | null>;
 };
