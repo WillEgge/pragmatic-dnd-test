@@ -3,18 +3,21 @@ import { useEffect, useRef, useState } from "react";
 import {
   draggable,
   dropTargetForElements,
+  ElementDragPayload,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
+import { DropTargetRecord } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
 
-// import { useBoard } from "@/data/BoardProvider";
+import { useBoard } from "@/data/BoardProvider";
 
 export const Card = ({ card }: { card: CardType }) => {
   const { id, title } = card;
   const ref = useRef(null);
   const [isDragging, setDragging] = useState(false);
 
-  // const [aboutToDrop, setAboutToDrop] = useState(false);
+  const { moveCard } = useBoard();
 
+  // const [aboutToDrop, setAboutToDrop] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
@@ -38,25 +41,49 @@ export const Card = ({ card }: { card: CardType }) => {
       getData() {
         return card;
       },
-      canDrop({ source }) {
+      canDrop({ source }: { source: ElementDragPayload }): boolean {
         return source.element !== element;
-      }//,
-      // onDragEnter() {
-      //   setAboutToDrop(true);
-      // },
-      // onDragLeave() {
-      //   setAboutToDrop(false);
-      // },
-      // onDrop() {
-        // setAboutToDrop(false);
-        // const target = self;
-        
-      // },
+      },
+      onDrop({
+        source,
+        self,
+      }: {
+        source: ElementDragPayload;
+        self: DropTargetRecord;
+      }): void {
+        const target = self;
+
+        if (!source || !target) {
+          return;
+        }
+
+        const sourceData = source.data as CardType;
+        const targetData = target.data as CardType & { column_id: string };
+
+        if (!sourceData || !targetData) {
+          return;
+        }
+
+        moveCard(sourceData.id, targetData.column_id, targetData.position + 1);
+      },
     };
+    //,
+    // onDragEnter() {
+    //   setAboutToDrop(true);
+    // },
+    // onDragLeave() {
+    //   setAboutToDrop(false);
+    // },
+    // onDrop() {
+    // setAboutToDrop(false);
+    // const target = self;
+
+    // },
+    // };
 
     return combine(draggable(dragConfig), dropTargetForElements(dropConfig));
     // return draggable(dragConfig);
-  }, [card]);
+  }, [card, moveCard]);
 
   return (
     <li
