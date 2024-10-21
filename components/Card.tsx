@@ -58,9 +58,20 @@ export const Card = ({ card }: { card: CardType }) => {
         }
 
         const sourceData = source.data as CardType;
-        const targetData = target.data as CardType & { column_id: string };
+        const targetData = target.data as CardType;
+
+        // console.log("sourceData:", sourceData);
+        // console.log("targetData:", targetData);
 
         if (!sourceData || !targetData) {
+          return;
+        }
+
+        if (
+          typeof targetData.column_id === "undefined" ||
+          typeof targetData.position === "undefined"
+        ) {
+          console.error("targetData is missing column_id or position");
           return;
         }
 
