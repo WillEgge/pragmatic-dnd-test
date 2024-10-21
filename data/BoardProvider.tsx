@@ -52,13 +52,19 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
 
   const moveCard = useCallback(
     async (cardId: string, targetColumnId: string, targetPosition: number) => {
+      if (!cardId || !targetColumnId || isNaN(targetPosition)) {
+        console.error("Invalid parameters passed to moveCard");
+        return;
+      }
       const updatedBoard = JSON.parse(JSON.stringify(board));
       let sourceColumn: ColumnType | undefined;
       let card: CardType | undefined;
       let sourceCardIndex: number = -1;
 
       for (const column of updatedBoard.columns) {
-        sourceCardIndex = column.cards.findIndex((c: CardType) => c.id === cardId);
+        sourceCardIndex = column.cards.findIndex(
+          (c: CardType) => c.id === cardId
+        );
         if (sourceCardIndex !== -1) {
           sourceColumn = column;
           card = column.cards[sourceCardIndex];
@@ -127,7 +133,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         fetchBoard();
       }
     },
-    [setBoard]
+    [board, setBoard]
   );
 
   const addCard = useCallback(
