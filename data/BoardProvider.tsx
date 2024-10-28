@@ -13,7 +13,8 @@ import { supabase } from "@/lib/supabase";
 const BoardContext = createContext<BoardContextType>({
   board: { name: "", columns: [] },
   moveCard: noop,
-  addCard: async () => null
+  addCard: async () => null,
+  deleteCard: async () => {},
 });
 
 const BoardProvider = ({ children }: { children: ReactNode }) => {
@@ -166,8 +167,45 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
     [board]
   );
 
+  const deleteCard = useCallback(
+    async (cardId: string) => {
+      const updatedBoard = JSON.parse(JSON.stringify(board));
+      let cardColumn: ColumnType | undefined;
+      let cardIndex: number = -1;
+
+      for (const column of updatedBoard.columns) {
+        cardIndex = column.cards.findIndex((c: CardType) => c.id === cardId);
+        if (cardIndex !== -1) {
+          cardColumn = column;
+          break;
+        }
+      }
+
+      if (!cardColumn || cardIndex === -1) {
+        console.error("Card not found for deletion");
+        return;
+      }
+
+      cardColumn.cards.splice(cardIndex, 1);
+
+      cardColumn.cards.forEach((card: CardType, index: number) => {
+        card.position = index;
+      });
+      setBoard(updatedBoard);
+
+      const { error } = await supabase.from("cards").delete().eq("id", cardId);
+
+      if (error) {
+        console.error("Error deleting card:", error);
+        fetchBoard();
+        throw error;
+      }
+    },
+    [board]
+  );
+
   return (
-    <BoardContext.Provider value={{ board, moveCard, addCard }}>
+    <BoardContext.Provider value={{ board, moveCard, addCard, deleteCard }}>
       {children}
     </BoardContext.Provider>
   );

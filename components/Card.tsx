@@ -7,17 +7,16 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { DropTargetRecord } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
-
+import { Trash2 } from "lucide-react";
 import { useBoard } from "@/data/BoardProvider";
+import { useToast } from "@/hooks/use-toast";
 
 export const Card = ({ card }: { card: CardType }) => {
   const { id, title } = card;
   const ref = useRef(null);
   const [isDragging, setDragging] = useState(false);
-
-  const { moveCard } = useBoard();
-
-  // const [aboutToDrop, setAboutToDrop] = useState(false);
+  const { moveCard, deleteCard } = useBoard();
+  const { toast } = useToast();
 
   useEffect(() => {
     const element = ref.current;
@@ -52,16 +51,12 @@ export const Card = ({ card }: { card: CardType }) => {
         self: DropTargetRecord;
       }): void {
         const target = self;
-
         if (!source || !target) {
           return;
         }
 
         const sourceData = source.data as CardType;
         const targetData = target.data as CardType;
-
-        // console.log("sourceData:", sourceData);
-        // console.log("targetData:", targetData);
 
         if (!sourceData || !targetData) {
           return;
@@ -96,11 +91,27 @@ export const Card = ({ card }: { card: CardType }) => {
     // return draggable(dragConfig);
   }, [card, moveCard]);
 
+  const handleDelete = async () => {
+    try {
+      await deleteCard(id);
+      toast({
+        title: "Success",
+        description: "Card has been deleted successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error deleting the card.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <li
       ref={ref}
       data-test-id={id}
-      className={`relative p-2 bg-gradient-to-br from-slate-100 to-slate-200 drop-shadow-sm rounded-md text-lg hover:cursor-grab ${
+      className={`relative p-2 bg-gradient-to-br from-slate-100 to-slate-200 drop-shadow-sm rounded-md text-lg hover:cursor-grab group ${
         isDragging ? "opacity-50" : ""
       }`}
     >
@@ -108,6 +119,12 @@ export const Card = ({ card }: { card: CardType }) => {
         {id}
       </span>
       <p className="text-slate-800">{title}</p>
+      <button
+        onClick={handleDelete}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-slate-400 hover:text-red-500"
+      >
+        <Trash2 size={16} />
+      </button>
     </li>
   );
 };

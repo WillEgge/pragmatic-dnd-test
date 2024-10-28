@@ -24,4 +24,5 @@ export type BoardContextType = {
     targetPosition: number
   ) => void;
   addCard: (newCard: Omit<CardType, "id">) => Promise<CardType | null>;
+  deleteCard: (cardId: string) => Promise<void>;
 };
