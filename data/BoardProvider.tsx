@@ -47,7 +47,12 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
     if (error) {
       console.error("Error fetching board:", error);
     } else if (data) {
-      setBoard(data);
+      // Ensure cards are sorted by position
+      const sortedColumns = data.columns.map((column: ColumnType) => ({
+        ...column,
+        cards: column.cards.sort((a, b) => a.position - b.position),
+      }));
+      setBoard({ ...data, columns: sortedColumns });
     }
   };
 
@@ -57,11 +62,13 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         console.error("Invalid parameters passed to moveCard");
         return;
       }
+
       const updatedBoard = JSON.parse(JSON.stringify(board));
       let sourceColumn: ColumnType | undefined;
       let card: CardType | undefined;
       let sourceCardIndex: number = -1;
 
+      // Find the source column and the card
       for (const column of updatedBoard.columns) {
         sourceCardIndex = column.cards.findIndex(
           (c: CardType) => c.id === cardId
@@ -87,8 +94,10 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      // Remove the card from the source column
       sourceColumn.cards.splice(sourceCardIndex, 1);
 
+      // Determine the insert index
       let insertIndex: number;
       if (
         targetPosition === -1 ||
@@ -101,40 +110,74 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         insertIndex = targetPosition;
       }
 
+      // Insert the card into the target column
       targetColumn.cards.splice(insertIndex, 0, {
         ...card,
         column_id: targetColumnId,
       });
 
-      const updatePositions = (column: ColumnType) => {
-        column.cards.forEach((c: CardType, index: number) => {
+      // Update positions in the target column
+      targetColumn.cards.forEach((c: CardType, index: number) => {
+        c.position = index;
+      });
+
+      // If moving to a different column, update positions in the source column
+      if (sourceColumn !== targetColumn) {
+        sourceColumn.cards.forEach((c: CardType, index: number) => {
           c.position = index;
         });
-      };
-
-      updatePositions(targetColumn);
-      if (sourceColumn !== targetColumn) {
-        updatePositions(sourceColumn);
       }
 
+      // Update the local board state
       setBoard(updatedBoard);
 
-      // Update the card in Supabase
-      const { error } = await supabase
-        .from("cards")
-        .update({
-          column_id: targetColumnId,
-          position: insertIndex,
-        })
-        .eq("id", cardId);
+      try {
+        // Begin Supabase transactions
+        const updates: any[] = [];
 
-      if (error) {
-        console.error("Error updating card:", error);
-        // Revert the local state if the update fails
+        // Update the moved card
+        updates.push(
+          supabase
+            .from("cards")
+            .update({
+              column_id: targetColumnId,
+              position: insertIndex,
+            })
+            .eq("id", cardId)
+        );
+
+        // Update positions in the target column
+        targetColumn.cards.forEach((c: CardType, index: number) => {
+          updates.push(
+            supabase.from("cards").update({ position: index }).eq("id", c.id)
+          );
+        });
+
+        // If moved to a different column, update positions in the source column
+        if (sourceColumn !== targetColumn) {
+          sourceColumn.cards.forEach((c: CardType, index: number) => {
+            updates.push(
+              supabase.from("cards").update({ position: index }).eq("id", c.id)
+            );
+          });
+        }
+
+        // Execute all updates in parallel
+        const results = await Promise.all(updates);
+
+        // Check for errors
+        results.forEach(({ error }) => {
+          if (error) {
+            throw error;
+          }
+        });
+      } catch (error) {
+        console.error("Error updating cards:", error);
+        // Revert local state if any update fails
         fetchBoard();
       }
     },
-    [board, setBoard]
+    [board]
   );
 
   const addCard = useCallback(
@@ -169,37 +212,23 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteCard = useCallback(
     async (cardId: string) => {
-      const updatedBoard = JSON.parse(JSON.stringify(board));
-      let cardColumn: ColumnType | undefined;
-      let cardIndex: number = -1;
-
-      for (const column of updatedBoard.columns) {
-        cardIndex = column.cards.findIndex((c: CardType) => c.id === cardId);
-        if (cardIndex !== -1) {
-          cardColumn = column;
-          break;
-        }
-      }
-
-      if (!cardColumn || cardIndex === -1) {
-        console.error("Card not found for deletion");
-        return;
-      }
-
-      cardColumn.cards.splice(cardIndex, 1);
-
-      cardColumn.cards.forEach((card: CardType, index: number) => {
-        card.position = index;
-      });
-      setBoard(updatedBoard);
-
       const { error } = await supabase.from("cards").delete().eq("id", cardId);
 
       if (error) {
         console.error("Error deleting card:", error);
-        fetchBoard();
         throw error;
       }
+
+      // Remove the card from the local state
+      const updatedBoard = JSON.parse(JSON.stringify(board));
+      updatedBoard.columns.forEach((column: ColumnType) => {
+        column.cards = column.cards.filter((card) => card.id !== cardId);
+        // Update positions after deletion
+        column.cards.forEach((card: CardType, index: number) => {
+          card.position = index;
+        });
+      });
+      setBoard(updatedBoard);
     },
     [board]
   );
