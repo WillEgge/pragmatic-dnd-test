@@ -53,11 +53,19 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         cards: column.cards.sort((a, b) => a.position - b.position),
       }));
       setBoard({ ...data, columns: sortedColumns });
+      console.log("Board fetched and sorted:", {
+        ...data,
+        columns: sortedColumns,
+      });
     }
   };
 
   const moveCard = useCallback(
     async (cardId: string, targetColumnId: string, targetPosition: number) => {
+      console.log(
+        `Attempting to move card ${cardId} to column ${targetColumnId} at position ${targetPosition}`
+      );
+
       if (!cardId || !targetColumnId || isNaN(targetPosition)) {
         console.error("Invalid parameters passed to moveCard");
         return;
@@ -81,7 +89,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (!sourceColumn || !card) {
-        console.error("Card not found");
+        console.error(`Card not found: ${cardId}`);
         return;
       }
 
@@ -128,8 +136,10 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         });
       }
 
+      console.log("Board before setting state:", updatedBoard);
       // Update the local board state
       setBoard(updatedBoard);
+      console.log("Board state updated:", updatedBoard);
 
       try {
         // Begin Supabase transactions
@@ -171,6 +181,8 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
             throw error;
           }
         });
+
+        console.log(`Card ${cardId} moved successfully.`);
       } catch (error) {
         console.error("Error updating cards:", error);
         // Revert local state if any update fails
@@ -182,6 +194,8 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
 
   const addCard = useCallback(
     async (newCard: Omit<CardType, "id">) => {
+      console.log("Adding new card:", newCard);
+
       const { data, error } = await supabase
         .from("cards")
         .insert(newCard)
@@ -194,6 +208,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
+        console.log("New card added:", data);
         const updatedBoard = { ...board };
         const targetColumn = updatedBoard.columns.find(
           (col) => col.id === newCard.column_id
@@ -202,6 +217,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
           targetColumn.cards.push(data);
           targetColumn.cards.sort((a, b) => a.position - b.position);
           setBoard(updatedBoard);
+          console.log("Board updated with new card:", updatedBoard);
         }
       }
 
@@ -212,6 +228,8 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteCard = useCallback(
     async (cardId: string) => {
+      console.log(`Deleting card: ${cardId}`);
+
       const { error } = await supabase.from("cards").delete().eq("id", cardId);
 
       if (error) {
@@ -229,6 +247,7 @@ const BoardProvider = ({ children }: { children: ReactNode }) => {
         });
       });
       setBoard(updatedBoard);
+      console.log(`Card ${cardId} deleted successfully.`);
     },
     [board]
   );
