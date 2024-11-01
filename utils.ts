@@ -7,7 +7,7 @@ export function isCardType(
     typeof data.id === "string" &&
     typeof data.title === "string" &&
     typeof data.position === "number" &&
-    typeof data.columnId === "string"
+    typeof data.column_id === "string"
   );
 }
 
