@@ -1,12 +1,6 @@
 import { CardType } from "@/types/type";
 import { useEffect, useRef, useState } from "react";
-import {
-  draggable,
-  dropTargetForElements,
-  ElementDragPayload,
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import { DropTargetRecord } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
+import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter"; // This is the drag-and-drop adapter
 import { Trash2 } from "lucide-react";
 import { useBoard } from "@/data/BoardProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -35,61 +29,14 @@ export const Card = ({ card }: { card: CardType }) => {
       },
     };
 
-    const dropConfig = {
-      element,
-      getData() {
-        return card;
-      },
-      canDrop({ source }: { source: ElementDragPayload }): boolean {
-        return source.element !== element;
-      },
-      onDrop({
-        source,
-        self,
-      }: {
-        source: ElementDragPayload;
-        self: DropTargetRecord;
-      }): void {
-        const target = self;
-        if (!source || !target) {
-          return;
-        }
+    // Register draggable and get cleanup function
+    const cleanupFn = draggable(dragConfig);
 
-        const sourceData = source.data as CardType;
-        const targetData = target.data as CardType;
-
-        if (!sourceData || !targetData) {
-          return;
-        }
-
-        if (
-          typeof targetData.column_id === "undefined" ||
-          typeof targetData.position === "undefined"
-        ) {
-          console.error("targetData is missing column_id or position");
-          return;
-        }
-
-        moveCard(sourceData.id, targetData.column_id, targetData.position + 1);
-      },
+    // Cleanup when the component is unmounted or the card changes
+    return () => {
+      cleanupFn(); // Call the cleanup function directly instead of destroy
     };
-    //,
-    // onDragEnter() {
-    //   setAboutToDrop(true);
-    // },
-    // onDragLeave() {
-    //   setAboutToDrop(false);
-    // },
-    // onDrop() {
-    // setAboutToDrop(false);
-    // const target = self;
-
-    // },
-    // };
-
-    return combine(draggable(dragConfig), dropTargetForElements(dropConfig));
-    // return draggable(dragConfig);
-  }, [card, moveCard]);
+  }, [card, moveCard]); // Dependencies ensure it runs on card changes
 
   const handleDelete = async () => {
     try {
