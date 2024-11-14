@@ -11,6 +11,7 @@ const DropTarget = ({
   position: number;
 }) => {
   const [isHovering, setIsHovering] = useState(false);
+  const [isAdjacent, setIsAdjacent] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const { moveCard } = useBoard();
 
@@ -21,15 +22,39 @@ const DropTarget = ({
         column_id: columnId,
         position: position,
       }),
-      onDragEnter: () => setIsHovering(true),
-      onDragLeave: () => setIsHovering(false),
-      onDrop: (args: any) => {
-        // Changed parameter type to 'any'
-        const data = args.data as CardType; // Type assertion
-        if (data && data.id) {
-          moveCard(data.id, columnId, position);
-          setIsHovering(false);
+      onDragEnter: (args: any) => {
+        const source = args.data as CardType;
+        if (source) {
+          const isSameColumn = source.column_id === columnId;
+          const isAdjacentPosition =
+            isSameColumn && Math.abs(source.position - position) <= 1;
+
+          if (!isSameColumn || !isAdjacentPosition) {
+            setIsHovering(true);
+          } else {
+            setIsHovering(false);
+          }
+
+          setIsAdjacent(isAdjacentPosition);
         }
+      },
+      onDragLeave: () => {
+        setIsHovering(false);
+        setIsAdjacent(false);
+      },
+      onDrop: (args: any) => {
+        const sourceData = args.data as CardType;
+
+        if (sourceData && sourceData.id) {
+          const isSameColumn = sourceData.column_id === columnId;
+          const isAdjacentPosition =
+            isSameColumn && Math.abs(sourceData.position - position) <= 1;
+
+          if (!isAdjacentPosition) {
+            moveCard(sourceData.id, columnId, position);
+          }
+        }
+        setIsHovering(false);
       },
     }),
     [columnId, position, moveCard]
@@ -46,8 +71,8 @@ const DropTarget = ({
   return (
     <div
       ref={ref}
-      className={`h-4 my-2 transition-colors ${
-        isHovering ? "bg-green-200" : "bg-transparent"
+      className={`h-2 my-1 transition-colors ${
+        isHovering && !isAdjacent ? "bg-green-200" : "bg-transparent"
       }`}
     />
   );
