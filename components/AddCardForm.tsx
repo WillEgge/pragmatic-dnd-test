@@ -4,19 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
 
 const AddCardForm: React.FC = () => {
   const [title, setTitle] = useState("");
   const [position, setPosition] = useState("");
   const { board, addCard } = useBoard();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
+
+  // Assign the To Do column to a variable to handle undefined case
+  const todoColumn = board.columns.find(
+    (col) => col.id === "133ebdb0-3d5d-44e8-ba7c-2b976b372143"
+  );
+
+  // Determine the default position
+  const defaultPosition = todoColumn
+    ? Math.max(todoColumn.cards.length - 1, 0)
+    : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const todoColumnId = "133ebdb0-3d5d-44e8-ba7c-2b976b372143";
-    const todoColumn = board.columns.find((col) => col.id === todoColumnId);
+    setIsSubmitting(true); // Start loading
 
     if (!todoColumn) {
       toast({
@@ -25,34 +33,44 @@ const AddCardForm: React.FC = () => {
           "The To Do column could not be found. Please check the column ID.",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
     try {
-      const newCard = await addCard({
+      // Determine the position
+      let finalPosition: number;
+      if (position.trim() === "") {
+        finalPosition = defaultPosition; // Use default position
+        console.log(
+          `No position provided. Setting default position to ${finalPosition}`
+        );
+      } else {
+        finalPosition = parseInt(position, 10);
+        if (isNaN(finalPosition)) {
+          throw new Error("Invalid position number.");
+        }
+        console.log(`Position provided by user: ${finalPosition}`);
+      }
+
+      const newCardData = {
         title,
-        position: parseInt(position),
-        column_id: todoColumnId,
-      });
+        position: finalPosition,
+        column_id: todoColumn.id,
+      };
+
+      const newCard = await addCard(newCardData);
 
       if (newCard) {
-        toast({
-          title: "Success",
-          description: "New card has been added successfully.",
-        });
-
         // Reset form fields
         setTitle("");
         setPosition("");
       }
     } catch (error) {
       console.error("Error adding new card:", error);
-      toast({
-        title: "Error",
-        description:
-          "There was an error adding the new card. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is already managed in BoardProvider
+    } finally {
+      setIsSubmitting(false); // End loading
     }
   };
 
@@ -70,19 +88,24 @@ const AddCardForm: React.FC = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            disabled={isSubmitting} // Disable input while submitting
           />
         </div>
         <div>
-          <Label htmlFor="position">Position</Label>
+          <Label htmlFor="position">Position (optional)</Label>
           <Input
             id="position"
             type="number"
             value={position}
             onChange={(e) => setPosition(e.target.value)}
-            required
+            // Removed 'required' attribute to make it optional
+            placeholder={`Default: ${defaultPosition}`}
+            disabled={isSubmitting} // Disable input while submitting
           />
         </div>
-        <Button type="submit">Add Card</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Adding..." : "Add Card"}
+        </Button>
       </div>
     </form>
   );
